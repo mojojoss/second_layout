@@ -1,0 +1,19 @@
+._percentage {
+	
+    transform: rotate(-90deg);
+}
+
+._percentage_animation {
+	
+    stroke-dasharray: 300;
+    stroke-dashoffset: 150;
+	transition: all 2s ease;
+}
+._percentage_text{
+	fill: rgb(169,169,169);
+	margin: auto;
+	font-size: 40px;	
+	font-family: 'Lato', sans-serif;
+	font-weight: 300;
+}
+
