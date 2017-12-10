@@ -7,3 +7,7 @@ import './__arrow-button/_arrow-button_left.css';
 import './__arrow-button/_arrow-button_right.css';
 import './__arrow-button/_arrow-button_left-disabled.css';
 import './__arrow-button/_arrow-button_right-disabled.css';
+import './__percentage/_percentage.css';
+import './__percentage/_percentage.js';
+import './__pie-chart/_pie-chart.css';
+import './__pie-chart/_pie-chart.js';
