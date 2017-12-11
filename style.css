@@ -1,0 +1,53 @@
+.slider-box{
+}
+
+.slider {
+    -webkit-appearance: none;
+    height: 25px;
+    outline: none;
+	width: 260px;
+}
+
+.slider:hover {
+    opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: rgb(231,87,53);
+    cursor: pointer;
+	border-radius:50%;
+	margin-top: -7px;
+	
+}
+
+.slider::-webkit-slider-runnable-track {
+    height: 6px;
+    background: rgb(229,229,229);
+    cursor: pointer;
+	border-radius:3px;
+	width: 100%;
+}
+.slider-cloud{
+	display: block;
+	width: 35px;
+	height: 24px;
+	background-color: rgb(231,87,53);
+	position: relative;
+	top: 25px;
+	left: -6px;
+	border-radius: 3px;
+}
+.slider-cloud-triangle{
+	display: block;
+	width: 1px;
+	height: 20px;
+	border: 4px solid transparent;	
+	border-top: 4px solid rgb(231,87,53);
+	top: 25px;
+	left: 7px;
+	position: relative;
+}
