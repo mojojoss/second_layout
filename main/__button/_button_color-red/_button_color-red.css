@@ -4,7 +4,7 @@
 	box-shadow: 0 3px rgb(191, 62, 31);
 	outline: none;
 	border: 1px solid rgb(231, 87, 53);
-	transition-duration: .4s;
+	transition-duration: .2s;
 }
 
 ._button_color-red:active {
@@ -15,5 +15,5 @@
 	background: rgb(231, 87, 53);
 	color: white;
 	border: none;
-	transition: all .4s ease;
+	transition: all .2s ease;
 }

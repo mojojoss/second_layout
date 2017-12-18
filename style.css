@@ -1,53 +1,61 @@
-.slider-box{
-}
-
-.slider {
-    -webkit-appearance: none;
-    height: 25px;
-    outline: none;
-	width: 260px;
-}
-
-.slider:hover {
-    opacity: 1;
-}
-
-.slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    background: rgb(231,87,53);
-    cursor: pointer;
-	border-radius:50%;
-	margin-top: -7px;
-	
-}
-
-.slider::-webkit-slider-runnable-track {
-    height: 6px;
-    background: rgb(229,229,229);
-    cursor: pointer;
-	border-radius:3px;
+.progress {
 	width: 100%;
-}
-.slider-cloud{
-	display: block;
-	width: 35px;
-	height: 24px;
-	background-color: rgb(231,87,53);
+	max-width: 800px;
+	margin: 30px auto 0;
+	display: table;
 	position: relative;
-	top: 25px;
-	left: -6px;
-	border-radius: 3px;
+	text-align: center;
+	left: 4%;
 }
-.slider-cloud-triangle{
-	display: block;
-	width: 1px;
-	height: 20px;
-	border: 4px solid transparent;	
-	border-top: 4px solid rgb(231,87,53);
-	top: 25px;
-	left: 7px;
+.progress ul {  
+	display: table-row;
+}
+.progress ul li {
+	background-color: rgb(229,229,229);
+	display: table-cell;
 	position: relative;
+	line-height: -1px
+	z-index: -3;
+	color: rgb(161,161,161);
+	font-family: 'Lato', sans-serif;
+	font-size: 11px;
+	text-align: left;
+}
+.progress ul li::before {
+	content:'';
+	width: 29px;
+	height: 29px;
+	color: #FFF;
+	line-height: 30px;
+	text-align: center;
+	left: -11px;
+	background-color: rgb(229,229,229);
+	border: solid 5px rgb(229,229,229);
+	position: absolute;
+	display: block;
+	top: -10px;	
+	margin-right: auto;
+	margin-left: auto;
+	z-index: -1;
+	
+	
+	-webkit-box-sizing: border-box;
+	   -moz-box-sizing: border-box;
+	        box-sizing: border-box;
+	
+	-webkit-border-radius: 50%;
+	   -moz-border-radius: 50%;
+	        border-radius: 50%;
+}
+.progress ul li:last-of-type {
+	background-color: transparent;
+}
+.progress ul li.complete {
+	background-color: #0e90d2; /* Completed Step Bar Color */
+	transition: background-color 0.75s, color 0.5s;
+}
+.progress ul li.complete::before {
+	background-color: #0e90d2; /* Completed Step Circle Color */
+	border: 5px solid transparent;
+	transition: background-color 0.75s, color 0.5s;
 }

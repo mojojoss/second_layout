@@ -11,3 +11,7 @@ import './__percentage/_percentage.css';
 import './__percentage/_percentage.js';
 import './__pie-chart/_pie-chart.css';
 import './__pie-chart/_pie-chart.js';
+import './__slider-orange/_slider-orange.css';
+import './__slider-orange/_slider-orange.js';
+import './__slider-aqua/_slider-aqua.css';
+import './__slider-aqua/_slider-aqua.js';

@@ -14,6 +14,7 @@ module.exports = {
     devServer: {
         contentBase: path.resolve(__dirname, './main')
     },
+	
     module: {
         rules: [
             {
@@ -34,5 +35,13 @@ module.exports = {
                 ]
             }
         ]
-    }
+    },
+	plugins: [
+		new webpack.ProvidePlugin({
+			$: 'jquery',
+			jquery: 'jquery'
+		})
+	]
+	
+	
 };
