@@ -15,3 +15,4 @@ import './__slider-orange/_slider-orange.css';
 import './__slider-orange/_slider-orange.js';
 import './__slider-aqua/_slider-aqua.css';
 import './__slider-aqua/_slider-aqua.js';
+import './__progressbar/_progressbar.css';
