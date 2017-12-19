@@ -16,3 +16,8 @@ import './__slider-orange/_slider-orange.js';
 import './__slider-aqua/_slider-aqua.css';
 import './__slider-aqua/_slider-aqua.js';
 import './__progressbar/_progressbar.css';
+import './__form/_text.css';
+import './__form/_text.js';
+import './__form/_validation-cloud.css';
+import './__form/_email.css';
+import './__form/_email.js';
