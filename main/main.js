@@ -21,3 +21,6 @@ import './__form/_text.js';
 import './__form/_validation-cloud.css';
 import './__form/_email.css';
 import './__form/_email.js';
+import './__form/_form-elements.css';
+import './__form/_submit-button.css';
+import './__form/_textarea.css';

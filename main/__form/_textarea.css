@@ -1,0 +1,15 @@
+textarea{
+	width: 289px;
+	height: 89px;
+	border: none;
+	background-color: rgb(229,229,229);
+	border-radius: 3px;
+	resize: none;
+	color: rgb(136, 136, 136);
+	font-family: 'Myriad Pro', Regular;
+	padding: 13px;
+	box-sizing: border-box;
+	margin-bottom: 12px;
+}
+
+

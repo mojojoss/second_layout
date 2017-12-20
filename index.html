@@ -76,23 +76,26 @@
 		</ul>
 	</div>
 
-
-	<div>
-		<form>
+	<h2 style="text-align: center; margin-bottom: 60px">FORM ELEMENTS</h2>
+	<div id="form-elements">
+		<form id="form">
 			<label>
     			<input type="text" required placeholder="Your Name" id="input-text" name="input-text"><span class="form_error" id="text-valid-cloud">ERROR</span>
     		</label>
 			<label for="input-email">
-    			<br><br>
+    			<br>
     			<input type="email" required class="input-email" name="input-email" id="input-email" placeholder="Your Email"><span class="form_error" id="email-valid-cloud">ERROR</span>
     		</label>
-    		<br><br>
-<!--    		<textarea name="" id="" cols="30" rows="10"></textarea>-->
-    		<input type="submit" class="__button _button_color-aqua _button_size-big ripp">
+			<br>
+			<textarea name="textarea" id="textarea" form="form" placeholder="Your Message"></textarea>
+			<input type="submit" class="__button _button_color-aqua _button_size-big ripp" value="SUBMIT">
 		</form>
-
-
-
+		
+		<div class="toggle">
+			<input type="checkbox" class="check">
+			<b class="b switch"></b>
+			<b class="b track"></b>
+		</div>
 	</div>
 
 

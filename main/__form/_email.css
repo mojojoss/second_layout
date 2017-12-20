@@ -6,23 +6,22 @@ input[type="email"] {
 	width: 210px;
 	color: rgb(136, 136, 136);
 	font-family: 'Myriad Pro', Regular;
+	padding-left: 13px;
+	box-sizing: border-box;
+	margin-bottom: 12px;
 }
 
 input[type="email"]::-webkit-input-placeholder {
 	color: rgb(136, 136, 136);
 	font-family: 'Myriad Pro', Regular;
-	padding-left: 13px;
-
 }
 
 input[type="email"]:-moz-placeholder {
 	color: rgb(136, 136, 136);
 	font-family: 'Myriad Pro', Regular;
-	padding-left: 13px;
 }
 
 input[type="email"]:-ms-input-placeholder {
 	color: rgb(136, 136, 136);
 	font-family: 'Myriad Pro', Regular;
-	padding-left: 13px;
 }

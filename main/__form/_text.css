@@ -6,23 +6,26 @@ input[type="text"] {
 	width: 210px;
 	color: rgb(136, 136, 136);
 	font-family: 'Myriad Pro', Regular;
+	padding-left: 13px;
+	box-sizing: border-box;
+	margin-bottom: 12px;
 }
 
 input[type="text"]::-webkit-input-placeholder {
 	color: rgb(136, 136, 136);
 	font-family: 'Myriad Pro', Regular;
-	padding-left: 13px;
+	
 
 }
 
 input[type="text"]:-moz-placeholder {
 	color: rgb(136, 136, 136);
 	font-family: 'Myriad Pro', Regular;
-	padding-left: 13px;
+	
 }
 
 input[type="text"]:-ms-input-placeholder {
 	color: rgb(136, 136, 136);
 	font-family: 'Myriad Pro', Regular;
-	padding-left: 13px;
+	
 }
