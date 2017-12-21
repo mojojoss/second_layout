@@ -24,3 +24,5 @@ import './__form/_email.js';
 import './__form/_form-elements.css';
 import './__form/_submit-button.css';
 import './__form/_textarea.css';
+import './__form/_toggle.css';
+import './__form/_tick-boxes.css';
