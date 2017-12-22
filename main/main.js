@@ -26,3 +26,6 @@ import './__form/_submit-button.css';
 import './__form/_textarea.css';
 import './__form/_toggle.css';
 import './__form/_tick-boxes.css';
+import './__form/_search-box/_search-box.css';
+import './__form/_search-box/_search-box.js';
+import './__form/_select.css';
