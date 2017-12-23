@@ -29,3 +29,6 @@ import './__form/_tick-boxes.css';
 import './__form/_search-box/_search-box.css';
 import './__form/_search-box/_search-box.js';
 import './__form/_select.css';
+import './__user-profile/_developer-box/_developer-box.css';
+import './__news/_news.css';
+import './__events/_events.css';

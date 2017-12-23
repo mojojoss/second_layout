@@ -1,0 +1,70 @@
+.developer-photo{
+	display: inline-block;
+	width: 83px;
+	height: 83px;
+	border: 5px solid rgb(229,229,229);
+	border-radius: 50%;
+	background-image: url('/main/__user-profile/_developer-photo/developer-photo1.png');
+	float: left;
+}
+.developer-cloud{
+	width: 164px;
+	height: 93px;
+	padding: 0;
+	background-color: rgb(229,229,229);
+	display: inline-block;
+	border-radius: 10px;
+	margin-left: 20px;
+	float: left;
+}
+.developer-cloud::before{
+	content: '';
+	position: relative;
+	display: block;
+	border: 10px solid transparent;
+	border-right:10px solid rgb(229,229,229);
+	left: -164px;
+	top: 35px;
+}
+
+.developer-name{
+	margin: 0;
+	font-size: 18px;
+	color: rgb(231,87,53);
+	font-family: 'Myriad Pro', Regular;
+	text-align: center;
+	position: relative;
+	top:-10px;
+}
+.developer-spec{
+	margin: 0;
+	font-size: 11px;
+	color: rgb(79,79,79);
+	font-family: 'Lato', Regular;
+	font-weight:bolder;
+	text-align: center;
+	position: relative;
+	top:-10px;
+}
+.fb-button{
+	margin-left: 37px;
+}
+.twitter-button{
+	margin-left: 22px;
+}
+.dribbble-button{
+	margin-left: 15px;
+}
+.developer-cloud:hover{
+	background-color: rgb(78,183,168);
+}
+.developer-cloud:hover::before{
+	border-right-color: rgb(78,183,168);
+}
+.developer-cloud:hover > p{
+	color: white;
+}
+.developer-cloud:hover > a > img{
+	cursor: pointer;
+	filter: brightness(10);
+}
