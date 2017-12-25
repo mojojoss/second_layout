@@ -1,43 +1,26 @@
-.map-box{
-/*	overflow: hidden;*/
-	width:594px; 
-	height:274px;
-	border-top-left-radius: 5px;
-	border-top-right-radius: 5px;
-}
-.map-info-box{
-	height: 70px;
-	width: 100%;
+#calendar table tr th{
 	background-color: rgb(231,87,53);
-	border-bottom-left-radius: 5px;
-	border-bottom-right-radius: 5px;
-}
-.map-call-words{
-	font-family: 'Lato';
-	font-size: 30px;
+	border-collapse: collapse;
+	font-family: lato;
+	font-size: 9px;
 	color: white;
-	position: relative;
-	top:14px;
-	left: 29px;
-	
+	height: 27px;
 }
-.map-addres{
-	font-family: 'Lato';
-	font-size: 12,5px;
-	color: white;
-	position: relative;
-	left: 166px;
-	top: -35px;
+
+#calendar table{
+	border-collapse: collapse;
+	text-align: center;
 }
-.map-myLocation{
-	position: relative;
-	top: -85px;
-	left: 500px;
-	cursor: pointer;
+#calendar table tr td{
+	background-color: rgb(242,242,242);
+	border: 1px solid white;
+	width: 39px;
+	height: 39px;
+	font-family: myriad pro;
+	color: rgb(134,134,134);
+	font-size: 20px;
 }
-.map-pin{
-	position: relative;
-	top: -85px;
-	left: 524px;
-	cursor: pointer;
+.today{
+	background-color: rgb(231,87,53) !important;
+	color: white !important;
 }

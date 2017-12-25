@@ -2,7 +2,7 @@
 	height: 212px;
 	width: 289px;
 	border-radius: 3px;
-	
+	overflow: hidden;
 	display: inline-block;
 	
 }

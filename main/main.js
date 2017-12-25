@@ -32,3 +32,5 @@ import './__form/_select.css';
 import './__user-profile/_developer-box/_developer-box.css';
 import './__news/_news.css';
 import './__events/_events.css';
+import './__map/_map.css';
+import './__map/_map.js';
