@@ -34,3 +34,5 @@ import './__news/_news.css';
 import './__events/_events.css';
 import './__map/_map.css';
 import './__map/_map.js';
+import './__calendar/_calendar.css';
+import './__calendar/_calendar.js';
