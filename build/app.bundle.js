@@ -60,465 +60,11 @@
 /******/ 	__webpack_require__.p = "/public";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 3);
+/******/ 	return __webpack_require__(__webpack_require__.s = 1);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports) {
-
-/*
-	MIT License http://www.opensource.org/licenses/mit-license.php
-	Author Tobias Koppers @sokra
-*/
-// css base code, injected by the css-loader
-module.exports = function(useSourceMap) {
-	var list = [];
-
-	// return the list of modules as css string
-	list.toString = function toString() {
-		return this.map(function (item) {
-			var content = cssWithMappingToString(item, useSourceMap);
-			if(item[2]) {
-				return "@media " + item[2] + "{" + content + "}";
-			} else {
-				return content;
-			}
-		}).join("");
-	};
-
-	// import a list of modules into the list
-	list.i = function(modules, mediaQuery) {
-		if(typeof modules === "string")
-			modules = [[null, modules, ""]];
-		var alreadyImportedModules = {};
-		for(var i = 0; i < this.length; i++) {
-			var id = this[i][0];
-			if(typeof id === "number")
-				alreadyImportedModules[id] = true;
-		}
-		for(i = 0; i < modules.length; i++) {
-			var item = modules[i];
-			// skip already imported module
-			// this implementation is not 100% perfect for weird media query combinations
-			//  when a module is imported multiple times with different media queries.
-			//  I hope this will never occur (Hey this way we have smaller bundles)
-			if(typeof item[0] !== "number" || !alreadyImportedModules[item[0]]) {
-				if(mediaQuery && !item[2]) {
-					item[2] = mediaQuery;
-				} else if(mediaQuery) {
-					item[2] = "(" + item[2] + ") and (" + mediaQuery + ")";
-				}
-				list.push(item);
-			}
-		}
-	};
-	return list;
-};
-
-function cssWithMappingToString(item, useSourceMap) {
-	var content = item[1] || '';
-	var cssMapping = item[3];
-	if (!cssMapping) {
-		return content;
-	}
-
-	if (useSourceMap && typeof btoa === 'function') {
-		var sourceMapping = toComment(cssMapping);
-		var sourceURLs = cssMapping.sources.map(function (source) {
-			return '/*# sourceURL=' + cssMapping.sourceRoot + source + ' */'
-		});
-
-		return [content].concat(sourceURLs).concat([sourceMapping]).join('\n');
-	}
-
-	return [content].join('\n');
-}
-
-// Adapted from convert-source-map (MIT)
-function toComment(sourceMap) {
-	// eslint-disable-next-line no-undef
-	var base64 = btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap))));
-	var data = 'sourceMappingURL=data:application/json;charset=utf-8;base64,' + base64;
-
-	return '/*# ' + data + ' */';
-}
-
-
-/***/ }),
-/* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-/*
-	MIT License http://www.opensource.org/licenses/mit-license.php
-	Author Tobias Koppers @sokra
-*/
-
-var stylesInDom = {};
-
-var	memoize = function (fn) {
-	var memo;
-
-	return function () {
-		if (typeof memo === "undefined") memo = fn.apply(this, arguments);
-		return memo;
-	};
-};
-
-var isOldIE = memoize(function () {
-	// Test for IE <= 9 as proposed by Browserhacks
-	// @see http://browserhacks.com/#hack-e71d8692f65334173fee715c222cb805
-	// Tests for existence of standard globals is to allow style-loader
-	// to operate correctly into non-standard environments
-	// @see https://github.com/webpack-contrib/style-loader/issues/177
-	return window && document && document.all && !window.atob;
-});
-
-var getElement = (function (fn) {
-	var memo = {};
-
-	return function(selector) {
-		if (typeof memo[selector] === "undefined") {
-			var styleTarget = fn.call(this, selector);
-			// Special case to return head of iframe instead of iframe itself
-			if (styleTarget instanceof window.HTMLIFrameElement) {
-				try {
-					// This will throw an exception if access to iframe is blocked
-					// due to cross-origin restrictions
-					styleTarget = styleTarget.contentDocument.head;
-				} catch(e) {
-					styleTarget = null;
-				}
-			}
-			memo[selector] = styleTarget;
-		}
-		return memo[selector]
-	};
-})(function (target) {
-	return document.querySelector(target)
-});
-
-var singleton = null;
-var	singletonCounter = 0;
-var	stylesInsertedAtTop = [];
-
-var	fixUrls = __webpack_require__(6);
-
-module.exports = function(list, options) {
-	if (typeof DEBUG !== "undefined" && DEBUG) {
-		if (typeof document !== "object") throw new Error("The style-loader cannot be used in a non-browser environment");
-	}
-
-	options = options || {};
-
-	options.attrs = typeof options.attrs === "object" ? options.attrs : {};
-
-	// Force single-tag solution on IE6-9, which has a hard limit on the # of <style>
-	// tags it will allow on a page
-	if (!options.singleton) options.singleton = isOldIE();
-
-	// By default, add <style> tags to the <head> element
-	if (!options.insertInto) options.insertInto = "head";
-
-	// By default, add <style> tags to the bottom of the target
-	if (!options.insertAt) options.insertAt = "bottom";
-
-	var styles = listToStyles(list, options);
-
-	addStylesToDom(styles, options);
-
-	return function update (newList) {
-		var mayRemove = [];
-
-		for (var i = 0; i < styles.length; i++) {
-			var item = styles[i];
-			var domStyle = stylesInDom[item.id];
-
-			domStyle.refs--;
-			mayRemove.push(domStyle);
-		}
-
-		if(newList) {
-			var newStyles = listToStyles(newList, options);
-			addStylesToDom(newStyles, options);
-		}
-
-		for (var i = 0; i < mayRemove.length; i++) {
-			var domStyle = mayRemove[i];
-
-			if(domStyle.refs === 0) {
-				for (var j = 0; j < domStyle.parts.length; j++) domStyle.parts[j]();
-
-				delete stylesInDom[domStyle.id];
-			}
-		}
-	};
-};
-
-function addStylesToDom (styles, options) {
-	for (var i = 0; i < styles.length; i++) {
-		var item = styles[i];
-		var domStyle = stylesInDom[item.id];
-
-		if(domStyle) {
-			domStyle.refs++;
-
-			for(var j = 0; j < domStyle.parts.length; j++) {
-				domStyle.parts[j](item.parts[j]);
-			}
-
-			for(; j < item.parts.length; j++) {
-				domStyle.parts.push(addStyle(item.parts[j], options));
-			}
-		} else {
-			var parts = [];
-
-			for(var j = 0; j < item.parts.length; j++) {
-				parts.push(addStyle(item.parts[j], options));
-			}
-
-			stylesInDom[item.id] = {id: item.id, refs: 1, parts: parts};
-		}
-	}
-}
-
-function listToStyles (list, options) {
-	var styles = [];
-	var newStyles = {};
-
-	for (var i = 0; i < list.length; i++) {
-		var item = list[i];
-		var id = options.base ? item[0] + options.base : item[0];
-		var css = item[1];
-		var media = item[2];
-		var sourceMap = item[3];
-		var part = {css: css, media: media, sourceMap: sourceMap};
-
-		if(!newStyles[id]) styles.push(newStyles[id] = {id: id, parts: [part]});
-		else newStyles[id].parts.push(part);
-	}
-
-	return styles;
-}
-
-function insertStyleElement (options, style) {
-	var target = getElement(options.insertInto)
-
-	if (!target) {
-		throw new Error("Couldn't find a style target. This probably means that the value for the 'insertInto' parameter is invalid.");
-	}
-
-	var lastStyleElementInsertedAtTop = stylesInsertedAtTop[stylesInsertedAtTop.length - 1];
-
-	if (options.insertAt === "top") {
-		if (!lastStyleElementInsertedAtTop) {
-			target.insertBefore(style, target.firstChild);
-		} else if (lastStyleElementInsertedAtTop.nextSibling) {
-			target.insertBefore(style, lastStyleElementInsertedAtTop.nextSibling);
-		} else {
-			target.appendChild(style);
-		}
-		stylesInsertedAtTop.push(style);
-	} else if (options.insertAt === "bottom") {
-		target.appendChild(style);
-	} else if (typeof options.insertAt === "object" && options.insertAt.before) {
-		var nextSibling = getElement(options.insertInto + " " + options.insertAt.before);
-		target.insertBefore(style, nextSibling);
-	} else {
-		throw new Error("[Style Loader]\n\n Invalid value for parameter 'insertAt' ('options.insertAt') found.\n Must be 'top', 'bottom', or Object.\n (https://github.com/webpack-contrib/style-loader#insertat)\n");
-	}
-}
-
-function removeStyleElement (style) {
-	if (style.parentNode === null) return false;
-	style.parentNode.removeChild(style);
-
-	var idx = stylesInsertedAtTop.indexOf(style);
-	if(idx >= 0) {
-		stylesInsertedAtTop.splice(idx, 1);
-	}
-}
-
-function createStyleElement (options) {
-	var style = document.createElement("style");
-
-	options.attrs.type = "text/css";
-
-	addAttrs(style, options.attrs);
-	insertStyleElement(options, style);
-
-	return style;
-}
-
-function createLinkElement (options) {
-	var link = document.createElement("link");
-
-	options.attrs.type = "text/css";
-	options.attrs.rel = "stylesheet";
-
-	addAttrs(link, options.attrs);
-	insertStyleElement(options, link);
-
-	return link;
-}
-
-function addAttrs (el, attrs) {
-	Object.keys(attrs).forEach(function (key) {
-		el.setAttribute(key, attrs[key]);
-	});
-}
-
-function addStyle (obj, options) {
-	var style, update, remove, result;
-
-	// If a transform function was defined, run it on the css
-	if (options.transform && obj.css) {
-	    result = options.transform(obj.css);
-
-	    if (result) {
-	    	// If transform returns a value, use that instead of the original css.
-	    	// This allows running runtime transformations on the css.
-	    	obj.css = result;
-	    } else {
-	    	// If the transform function returns a falsy value, don't add this css.
-	    	// This allows conditional loading of css
-	    	return function() {
-	    		// noop
-	    	};
-	    }
-	}
-
-	if (options.singleton) {
-		var styleIndex = singletonCounter++;
-
-		style = singleton || (singleton = createStyleElement(options));
-
-		update = applyToSingletonTag.bind(null, style, styleIndex, false);
-		remove = applyToSingletonTag.bind(null, style, styleIndex, true);
-
-	} else if (
-		obj.sourceMap &&
-		typeof URL === "function" &&
-		typeof URL.createObjectURL === "function" &&
-		typeof URL.revokeObjectURL === "function" &&
-		typeof Blob === "function" &&
-		typeof btoa === "function"
-	) {
-		style = createLinkElement(options);
-		update = updateLink.bind(null, style, options);
-		remove = function () {
-			removeStyleElement(style);
-
-			if(style.href) URL.revokeObjectURL(style.href);
-		};
-	} else {
-		style = createStyleElement(options);
-		update = applyToTag.bind(null, style);
-		remove = function () {
-			removeStyleElement(style);
-		};
-	}
-
-	update(obj);
-
-	return function updateStyle (newObj) {
-		if (newObj) {
-			if (
-				newObj.css === obj.css &&
-				newObj.media === obj.media &&
-				newObj.sourceMap === obj.sourceMap
-			) {
-				return;
-			}
-
-			update(obj = newObj);
-		} else {
-			remove();
-		}
-	};
-}
-
-var replaceText = (function () {
-	var textStore = [];
-
-	return function (index, replacement) {
-		textStore[index] = replacement;
-
-		return textStore.filter(Boolean).join('\n');
-	};
-})();
-
-function applyToSingletonTag (style, index, remove, obj) {
-	var css = remove ? "" : obj.css;
-
-	if (style.styleSheet) {
-		style.styleSheet.cssText = replaceText(index, css);
-	} else {
-		var cssNode = document.createTextNode(css);
-		var childNodes = style.childNodes;
-
-		if (childNodes[index]) style.removeChild(childNodes[index]);
-
-		if (childNodes.length) {
-			style.insertBefore(cssNode, childNodes[index]);
-		} else {
-			style.appendChild(cssNode);
-		}
-	}
-}
-
-function applyToTag (style, obj) {
-	var css = obj.css;
-	var media = obj.media;
-
-	if(media) {
-		style.setAttribute("media", media)
-	}
-
-	if(style.styleSheet) {
-		style.styleSheet.cssText = css;
-	} else {
-		while(style.firstChild) {
-			style.removeChild(style.firstChild);
-		}
-
-		style.appendChild(document.createTextNode(css));
-	}
-}
-
-function updateLink (link, options, obj) {
-	var css = obj.css;
-	var sourceMap = obj.sourceMap;
-
-	/*
-		If convertToAbsoluteUrls isn't defined, but sourcemaps are enabled
-		and there is no publicPath defined then lets turn convertToAbsoluteUrls
-		on by default.  Otherwise default to the convertToAbsoluteUrls option
-		directly
-	*/
-	var autoFixUrls = options.convertToAbsoluteUrls === undefined && sourceMap;
-
-	if (options.convertToAbsoluteUrls || autoFixUrls) {
-		css = fixUrls(css);
-	}
-
-	if (sourceMap) {
-		// http://stackoverflow.com/a/26603875
-		css += "\n/*# sourceMappingURL=data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap)))) + " */";
-	}
-
-	var blob = new Blob([css], { type: "text/css" });
-
-	var oldSrc = link.href;
-
-	link.href = URL.createObjectURL(blob);
-
-	if(oldSrc) URL.revokeObjectURL(oldSrc);
-}
-
-
-/***/ }),
-/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -10778,236 +10324,130 @@ return jQuery;
 
 
 /***/ }),
-/* 3 */
+/* 1 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
+__webpack_require__(2);
+
+__webpack_require__(3);
+
 __webpack_require__(4);
+
+__webpack_require__(5);
+
+__webpack_require__(6);
 
 __webpack_require__(7);
 
 __webpack_require__(8);
 
+__webpack_require__(9);
+
 __webpack_require__(10);
+
+__webpack_require__(11);
 
 __webpack_require__(12);
 
+__webpack_require__(13);
+
 __webpack_require__(14);
+
+__webpack_require__(15);
 
 __webpack_require__(16);
 
+__webpack_require__(17);
+
 __webpack_require__(18);
+
+__webpack_require__(19);
 
 __webpack_require__(20);
 
+__webpack_require__(21);
+
 __webpack_require__(22);
+
+__webpack_require__(23);
 
 __webpack_require__(24);
 
 __webpack_require__(25);
 
+__webpack_require__(26);
+
 __webpack_require__(27);
 
 __webpack_require__(28);
+
+__webpack_require__(29);
 
 __webpack_require__(30);
 
 __webpack_require__(31);
 
+__webpack_require__(32);
+
 __webpack_require__(33);
 
 __webpack_require__(34);
 
+__webpack_require__(35);
+
 __webpack_require__(36);
+
+__webpack_require__(37);
 
 __webpack_require__(38);
 
 __webpack_require__(39);
 
+var _messageWindow = __webpack_require__(40);
+
+var _messageWindow2 = _interopRequireDefault(_messageWindow);
+
 __webpack_require__(41);
+
+__webpack_require__(42);
 
 __webpack_require__(43);
 
 __webpack_require__(44);
 
+__webpack_require__(45);
+
 __webpack_require__(46);
+
+__webpack_require__(47);
 
 __webpack_require__(48);
 
+__webpack_require__(49);
+
 __webpack_require__(50);
+
+__webpack_require__(51);
 
 __webpack_require__(52);
 
+__webpack_require__(53);
+
 __webpack_require__(54);
 
-__webpack_require__(56);
-
-__webpack_require__(57);
-
-__webpack_require__(59);
-
-__webpack_require__(61);
-
-__webpack_require__(63);
-
-__webpack_require__(65);
-
-__webpack_require__(67);
-
-__webpack_require__(68);
-
-__webpack_require__(70);
-
-__webpack_require__(71);
-
-__webpack_require__(73);
-
-__webpack_require__(75);
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(5);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./__button.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./__button.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 5 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, ".__button {\r\n\tmargin: 0;\r\n\tmargin-bottom: 4px;\r\n\tposition: relative;\r\n\tdisplay: block;\r\n\twidth: 78px;\r\n\theight: 22px;\r\n\tfont-weight: bold;\r\n\tcursor: pointer;\r\n\toverflow: hidden;\r\n\tuser-select: none;\r\n\tborder-radius: 4px;\r\n\tfont-size: 10px;\r\n\tbox-shadow: 0px 3px;\r\n\tfont-family: \"lato black\";\r\n}\r\n\r\n.ripple {\r\n\tposition: absolute;\r\n\tbackground: rgba(255, 255, 255, 0.3);\r\n\tborder-radius: 100%;\r\n\ttransform: scale(0);\r\n\tpointer-events: none;\r\n}\r\n\r\n.ripple.show {\r\n\tanimation: ripple .75s ease-out;\r\n}\r\n\r\n@keyframes ripple {\r\n\tto {\r\n\t\ttransform: scale(2);\r\n\t\topacity: 0;\r\n\t}\r\n}\r\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 6 */
+/* 2 */
 /***/ (function(module, exports) {
 
-
-/**
- * When source maps are enabled, `style-loader` uses a link element with a data-uri to
- * embed the css on the page. This breaks all relative urls because now they are relative to a
- * bundle instead of the current page.
- *
- * One solution is to only use full urls, but that may be impossible.
- *
- * Instead, this function "fixes" the relative urls to be absolute according to the current page location.
- *
- * A rudimentary test suite is located at `test/fixUrls.js` and can be run via the `npm test` command.
- *
- */
-
-module.exports = function (css) {
-  // get current location
-  var location = typeof window !== "undefined" && window.location;
-
-  if (!location) {
-    throw new Error("fixUrls requires window.location");
-  }
-
-	// blank or null?
-	if (!css || typeof css !== "string") {
-	  return css;
-  }
-
-  var baseUrl = location.protocol + "//" + location.host;
-  var currentDir = baseUrl + location.pathname.replace(/\/[^\/]*$/, "/");
-
-	// convert each url(...)
-	/*
-	This regular expression is just a way to recursively match brackets within
-	a string.
-
-	 /url\s*\(  = Match on the word "url" with any whitespace after it and then a parens
-	   (  = Start a capturing group
-	     (?:  = Start a non-capturing group
-	         [^)(]  = Match anything that isn't a parentheses
-	         |  = OR
-	         \(  = Match a start parentheses
-	             (?:  = Start another non-capturing groups
-	                 [^)(]+  = Match anything that isn't a parentheses
-	                 |  = OR
-	                 \(  = Match a start parentheses
-	                     [^)(]*  = Match anything that isn't a parentheses
-	                 \)  = Match a end parentheses
-	             )  = End Group
-              *\) = Match anything and then a close parens
-          )  = Close non-capturing group
-          *  = Match anything
-       )  = Close capturing group
-	 \)  = Match a close parens
-
-	 /gi  = Get all matches, not the first.  Be case insensitive.
-	 */
-	var fixedCss = css.replace(/url\s*\(((?:[^)(]|\((?:[^)(]+|\([^)(]*\))*\))*)\)/gi, function(fullMatch, origUrl) {
-		// strip quotes (if they exist)
-		var unquotedOrigUrl = origUrl
-			.trim()
-			.replace(/^"(.*)"$/, function(o, $1){ return $1; })
-			.replace(/^'(.*)'$/, function(o, $1){ return $1; });
-
-		// already a full url? no change
-		if (/^(#|data:|http:\/\/|https:\/\/|file:\/\/\/)/i.test(unquotedOrigUrl)) {
-		  return fullMatch;
-		}
-
-		// convert the url to a full url
-		var newUrl;
-
-		if (unquotedOrigUrl.indexOf("//") === 0) {
-		  	//TODO: should we add protocol?
-			newUrl = unquotedOrigUrl;
-		} else if (unquotedOrigUrl.indexOf("/") === 0) {
-			// path should be relative to the base url
-			newUrl = baseUrl + unquotedOrigUrl; // already starts with '/'
-		} else {
-			// path should be relative to current directory
-			newUrl = currentDir + unquotedOrigUrl.replace(/^\.\//, ""); // Strip leading './'
-		}
-
-		// send back the fixed url(...)
-		return "url(" + JSON.stringify(newUrl) + ")";
-	});
-
-	// send back the fixed css
-	return fixedCss;
-};
-
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 7 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11036,367 +10476,55 @@ var addRippleEffect = function addRippleEffect(e) {
 document.addEventListener('click', addRippleEffect, false);
 
 /***/ }),
+/* 4 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
 /* 8 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(9);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!./_button_color-aqua.css", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!./_button_color-aqua.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
 /* 9 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "._button_color-aqua {\r\n\tbackground-color: white;\r\n\tcolor:rgb(40, 162, 144);\r\n\tbox-shadow: 0 3px rgb(40, 162, 144);\r\n\toutline: none;\r\n\tborder: 1px solid rgb(40, 162, 144);\r\n\ttransition-duration: .2s;\r\n}\r\n._button_color-aqua:active{\r\n\ttransform: translate(0, 3px);\r\n\tbox-shadow:0px 0px;\r\n}\r\n._button_color-aqua:hover{\r\n\tbackground: rgb(78, 183, 168);\r\n\tcolor: white;\r\n\tborder: none;\r\n\ttransition: all .2s ease;\r\n}\r\n", ""]);
-
-// exports
-
+// removed by extract-text-webpack-plugin
 
 /***/ }),
 /* 10 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(11);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!./_button_size-big.css", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!./_button_size-big.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
 /* 11 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "._button_size-big{\r\n\tfont-size: 12px;\r\n\twidth: 118px;\r\n\theight: 32px;\r\n}", ""]);
-
-// exports
-
+// removed by extract-text-webpack-plugin
 
 /***/ }),
 /* 12 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(13);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!./_button_color-red.css", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!./_button_color-red.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 13 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "._button_color-red {\r\n\tbackground: white;\r\n\tcolor: rgb(231, 87, 53);\r\n\tbox-shadow: 0 3px rgb(191, 62, 31);\r\n\toutline: none;\r\n\tborder: 1px solid rgb(231, 87, 53);\r\n\ttransition-duration: .2s;\r\n}\r\n\r\n._button_color-red:active {\r\n\ttransform: translate(0, 3px);\r\n\tbox-shadow: 0px 0px;\r\n}\r\n._button_color-red:hover{\r\n\tbackground: rgb(231, 87, 53);\r\n\tcolor: white;\r\n\tborder: none;\r\n\ttransition: all .2s ease;\r\n}", ""]);
-
-// exports
-
-
-/***/ }),
-/* 14 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(15);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_arrow-button_left.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_arrow-button_left.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 15 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "._arrow-button_left {\r\n\tdisplay: inline-block;\r\n\twidth: 50px;\r\n\theight: 50px;\r\n\tborder: 3px solid rgb(78, 183, 168);\r\n\tborder-radius: 50%;\r\n\ttransition-duration: .4s;\r\n}\r\n\r\n._arrow-button_left::after {\r\n\tcontent: '';\r\n\tdisplay: inline-block;\r\n\tmargin-top: 16px;\r\n\tmargin-left: 18px;\r\n\twidth: 17px;\r\n\theight: 17px;\r\n\tborder-top: 3px solid rgb(78, 183, 168);\r\n\tborder-right: 3px solid rgb(78, 183, 168);\r\n\ttransform: rotate(-135deg);\r\n\ttransition-duration: .4s;\r\n}\r\n._arrow-button_left:hover{\r\n\tbackground-color: rgb(78, 183, 168);\r\n\ttransition: all .4s ease;\r\n}\r\n._arrow-button_left:hover::after{\r\n\tborder-color:white;\r\n\ttransition: all .4s ease;\r\n}", ""]);
-
-// exports
-
-
-/***/ }),
-/* 16 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(17);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_arrow-button_right.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_arrow-button_right.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 17 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "._arrow-button_right {\r\n\tdisplay: inline-block;\r\n\twidth: 50px;\r\n\theight: 50px;\r\n\tborder: 3px solid rgb(78, 183, 168);\r\n\tborder-radius: 50%;\r\n\ttransition-duration: .4s;\r\n\toutline: none;\r\n}\r\n\r\n._arrow-button_right::after {\r\n\tcontent: '';\r\n\tdisplay: inline-block;\r\n\tmargin-top: 16px;\r\n\tmargin-left: 12px;\r\n\twidth: 17px;\r\n\theight: 17px;\r\n\tborder-top: 3px solid rgb(78, 183, 168);\r\n\tborder-right: 3px solid rgb(78, 183, 168);\r\n\ttransform: rotate(-315deg);\r\n\ttransition-duration: .4s;\r\n}\r\n._arrow-button_right:hover{\r\n\tbackground-color: rgb(78, 183, 168);\r\n\ttransition: all .4s ease;\r\n}\r\n._arrow-button_right:hover::after{\r\n\tborder-color:white;\r\n\ttransition: all .4s ease;\r\n}", ""]);
-
-// exports
-
-
-/***/ }),
-/* 18 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(19);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_arrow-button_left-disabled.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_arrow-button_left-disabled.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "._arrow-button_left-disabled {\r\n\tdisplay: inline-block;\r\n\twidth: 50px;\r\n\theight: 50px;\r\n\tborder: 3px solid rgb(229, 229, 229);\r\n\tborder-radius: 50%;\r\n\tbackground-color: rgb(229, 229, 229);\r\n\tborder-color: rgb(229, 229, 229);\r\n}\r\n\r\n._arrow-button_left-disabled::after {\r\n\tcontent: '';\r\n\tdisplay: inline-block;\r\n\tmargin-top: 16px;\r\n\tmargin-left: 18px;\r\n\twidth: 17px;\r\n\theight: 17px;\r\n\tborder-top: 3px solid white;\r\n\tborder-right: 3px solid white;\r\n\ttransform: rotate(-135deg);\r\n}", ""]);
-
-// exports
-
-
-/***/ }),
-/* 20 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(21);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_arrow-button_right-disabled.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_arrow-button_right-disabled.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 21 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "._arrow-button_right-disabled {\r\n\tdisplay: inline-block;\r\n\twidth: 50px;\r\n\theight: 50px;\r\n\tborder: 3px solid rgb(78, 183, 168);\r\n\tborder-radius: 50%;\r\n\tbackground-color: rgb(229, 229, 229);\r\n\tborder-color: rgb(229, 229, 229);\r\n}\r\n\r\n._arrow-button_right-disabled::after {\r\n\tcontent: '';\r\n\tdisplay: inline-block;\r\n\tmargin-top: 16px;\r\n\tmargin-left: 12px;\r\n\twidth: 17px;\r\n\theight: 17px;\r\n\tborder-top: 3px solid white;\r\n\tborder-right: 3px solid white;\r\n\ttransform: rotate(-315deg);\r\n}\r\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 22 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(23);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_percentage.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_percentage.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 23 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "._percentage {\r\n\t\r\n    transform: rotate(-90deg);\r\n}\r\n\r\n._percentage_animation {\r\n\t\r\n    stroke-dasharray: 301;\r\n\ttransition: all 2s ease;\r\n}\r\n._percentage_text{\r\n\tfill: rgb(169,169,169);\r\n\tmargin: auto;\r\n\tfont-size: 40px;\t\r\n\tfont-family: 'Lato', sans-serif;\r\n\tfont-weight: 300;\r\n}\r\n\r\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11408,126 +10536,68 @@ var percent = percentage_text.dataset.percent;
 percentage.style.strokeDashoffset = 301 - 3.01 * percent;
 console.log(percentage_text.dataset.percent);
 percentage_text.innerHTML = percent;
+var percentage = document.getElementById("percentage2");
+var percentage_text = document.getElementById('percentage_text2');
+var percent = percentage_text.dataset.percent;
+percentage.style.strokeDashoffset = 301 - 3.01 * percent;
+console.log(percentage_text.dataset.percent);
+percentage_text.innerHTML = percent;
+var percentage = document.getElementById("percentage3");
+var percentage_text = document.getElementById('percentage_text3');
+var percent = percentage_text.dataset.percent;
+percentage.style.strokeDashoffset = 301 - 3.01 * percent;
+console.log(percentage_text.dataset.percent);
+percentage_text.innerHTML = percent;
+var percentage = document.getElementById("percentage4");
+var percentage_text = document.getElementById('percentage_text4');
+var percent = percentage_text.dataset.percent;
+percentage.style.strokeDashoffset = 301 - 3.01 * percent;
+console.log(percentage_text.dataset.percent);
+percentage_text.innerHTML = percent;
 
 /***/ }),
-/* 25 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 13 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(26);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_pie-chart.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_pie-chart.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 26 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "._pie-chart {\r\n\t\r\n    transform: rotate(-90deg);\r\n}\r\n\r\n._pie-chart_animation{\r\n\t\r\n    stroke-dasharray: 301;\r\n\tstroke-dashoffset: 0;\r\n\ttransition: all 2s ease;\r\n}\r\n\r\n\r\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 27 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-function pie(perc, color) {
-  var pie_svg = document.getElementById("pie_svg");
-  var circle1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  var percValue = 301 - 3.01 * perc;
-  pie_svg.appendChild(circle1);
-  circle1.setAttribute('cx', 50);
-  circle1.setAttribute('cy', 50);
-  circle1.setAttribute('r', 39.5);
-  circle1.setAttribute('fill', 'none');
-  circle1.setAttribute('stroke', color);
-  circle1.setAttribute('stroke-width', '17px');
-  circle1.setAttribute('stroke-dasharray', 300);
-  circle1.setAttribute('stroke-dashoffset', percValue);
+function pie(perc, color, indent) {
+	var pie_svg = document.getElementById("pie_svg");
+	var circle1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+	var percValue = 2.48 * perc;
+	pie_svg.appendChild(circle1);
+	circle1.setAttribute('cx', 50);
+	circle1.setAttribute('cy', 50);
+	circle1.setAttribute('r', 39.5);
+	circle1.setAttribute('fill', 'none');
+	circle1.setAttribute('stroke', color);
+	circle1.setAttribute('stroke-width', '17px');
+	circle1.setAttribute('stroke-dasharray', percValue + ' 2000');
+	circle1.setAttribute('stroke-dashoffset', -indent * 2.48);
 }
 //percentage.style.strokeDashoffset = 301-(3.01*percent);
 console.log(pie_svg);
-pie(70, 'green');
-pie(60, 'red');
-pie(20, 'orange');
+//pie(70, 'green');
+//pie(60, 'red');
+pie(30, 'rgb(78,183,168)', 35);
+pie(25, 'rgb(231,87,53)', 10);
+pie(10, 'rgb(116,116,116)', 0);
 
 /***/ }),
-/* 28 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 15 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(29);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_slider-orange.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_slider-orange.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 29 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "\r\n._slider-orange-box{\r\n\twidth: 260px;\r\n\theight: 30px;\r\n}\r\n._slider-orange-box:hover ._slider-orange-value{\r\n\topacity: 1;\r\n\ttransition-duration: 1s;\r\n}\r\n._slider-orange-box:hover ._slider-orange-cloud{\r\n\topacity: 1;\r\n\ttransition-duration: 1s;\r\n}\r\n._slider-orange-box:hover ._slider-orange-cloud-triangle{\r\n\topacity: 1;\r\n\ttransition-duration: 1s;\r\n}\r\n\r\n._slider-orange {\r\n    -webkit-appearance: none;\r\n\tposition: relative;\r\n    height: 25px;\r\n    outline: none;\r\n\twidth: 260px;\t\t\r\n\tmargin: 0;\r\n\ttop: -80px;\r\n}\r\n\r\n._slider-orange::-webkit-slider-thumb {\r\n    -webkit-appearance: none;\r\n    appearance: none;\r\n    width: 20px;\r\n    height: 20px;\r\n    background: rgb(231,87,53);\r\n    cursor: pointer;\r\n\tborder-radius:50%;\r\n\tmargin-top: -7px;\r\n\t\r\n}\r\n\r\n._slider-orange::-webkit-slider-runnable-track {\r\n    height: 6px;\r\n    background: rgb(229,229,229);\r\n    cursor: pointer;\r\n\tborder-radius:3px;\r\n\twidth: 100%;\r\n}\r\n\r\n._slider-orange::-moz-range-thumb {\r\n    -webkit-appearance: none;\r\n    appearance: none;\r\n\tmargin: 0;\r\n    width: 20px;\r\n    height: 20px;\r\n    background: rgb(231,87,53);\r\n    cursor: pointer;\r\n\tborder-radius:50%;\r\n\tmargin-top: -7px;\r\n\t\r\n}\r\n\r\n._slider-orange::-moz-range-track {\r\n    height: 6px;\r\n    background: rgb(229,229,229);\r\n    cursor: pointer;\r\n\tborder-radius:3px;\r\n\twidth: 100%;\r\n}\r\n\r\n._slider-orange-cloud{\r\n\tdisplay: block;\r\n\twidth: 35px;\r\n\theight: 24px;\r\n\tbackground-color: rgb(231,87,53);\r\n\tposition: relative;\r\n\ttop: -39px;\r\n\tleft: -6px;\r\n\tborder-radius: 3px;\r\n\topacity: 0;\r\n\ttransition: opacity 1s ease;\r\n}\r\n._slider-orange-cloud-triangle{\r\n\tdisplay: block;\r\n\twidth: 1px;\r\n\theight: 0px;\r\n\tborder:4px solid transparent;\r\n\tborder-top: 4px solid rgb(231,87,53);\r\n\ttop: -39px;\r\n\tleft: 7px;\r\n\tposition: relative;\r\n\tmargin-bottom: 20px;\r\n\topacity: 0;\r\n\ttransition: opacity 1s ease;\r\n}\r\n._slider-orange-value{\r\n\tdisplay: block;\r\n\tposition: relative;\r\n\ttop: -87px;\r\n\tleft: 1px;\r\n\tcolor: white;\r\n\twidth: 20px;\r\n\ttext-align: center;\r\n\topacity: 0;\r\n\ttransition: opacity 1s ease;\r\n}", ""]);
-
-// exports
-
-
-/***/ }),
-/* 30 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11540,55 +10610,16 @@ $('._slider-orange').on('input', function () {
 	$('._slider-orange-value').css('left', x * 2.42 - 1 + 'px');
 	$('._slider-orange-value').text(x);
 });
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 31 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 17 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(32);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_slider-aqua.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_slider-aqua.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 32 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "._slider-aqua {\r\n    -webkit-appearance: none;\r\n    height: 6px;\r\n    outline: none;\r\n\twidth: 260px;\t\t\r\n\tmargin-bottom: 12px;\r\n\t\r\n\r\n}\r\n\r\n._slider-aqua::-webkit-slider-thumb {\r\n    -webkit-appearance: none;\r\n    appearance: none;\r\n    width: 20px;\r\n    height: 20px;\r\n    background: rgb(78,183,168);\r\n    cursor: pointer;\r\n\tborder-radius:50%;\r\n\tmargin-top: -7px;\r\n\t\r\n}\r\n\r\n._slider-aqua::-webkit-slider-runnable-track {\r\n    height: 6px;\r\n    background: rgb(229,229,229);\r\n    cursor: pointer;\r\n\tborder-radius:3px;\r\n\twidth: 100%;\r\n}\r\n\r\n._slider-aqua::-moz-range-thumb {\r\n    -webkit-appearance: none;\r\n    appearance: none;\r\n\tmargin: 0;\r\n    width: 20px;\r\n    height: 20px;\r\n    background: rgb(78,183,168);\r\n    cursor: pointer;\r\n\tborder-radius:50%;\r\n\tmargin-top: -7px;\r\n\t\r\n}\r\n\r\n._slider-aqua::-moz-range-track {\r\n    height: 6px;\r\n    background: rgb(229,229,229);\r\n    cursor: pointer;\r\n\tborder-radius:3px;\r\n\twidth: 100%;\r\n}\r\n._slider-aqua-text{\r\n\twidth: 260px;\r\n\tmargin: 0;\r\n\tcolor: rgb(209,209,209);\r\n\tfont-family: 'Lato', sans-serif;\r\n\tfont-size: 11px;\r\n\tpadding-left: 5px;\r\n\t\r\n\t\t\r\n}\r\n._slider-aqua-text span{\r\n\tpadding-right: 47px;\r\n}\r\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 33 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11600,100 +10631,22 @@ $('._slider-aqua').on('input', function () {
 
 	$('<style>._slider-aqua::-webkit-slider-runnable-track{background:linear-gradient(to right, rgb(78,183,168) ' + slider_aqua_position + '%, rgb(229,229,229) ' + slider_aqua_position + '%);}</style> <style>._slider-aqua::-moz-range-track{background:linear-gradient(to right, rgb(78,183,168) ' + slider_aqua_position + '%, rgb(229,229,229) ' + slider_aqua_position + '%);}</style>').appendTo('head');
 });
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 34 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 19 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(35);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_progressbar.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_progressbar.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 35 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 20 */
+/***/ (function(module, exports) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, ".container {\r\n\twidth: 100%;\r\n}\r\n\r\n._progressbar {\r\n\tpadding: 0;\r\n\tmargin: 0;\r\n\tcounter-reset: step;\r\n\tcolor: rgb(161, 161, 161);\r\n\tfont-family: 'Lato', sans-serif;\r\n\tfont-size: 14px;\r\n}\r\n\r\n._progressbar li {\r\n\tlist-style: none;\r\n\tdisplay: inline-block;\r\n\twidth: 19.6%;\r\n\tposition: relative;\r\n\ttext-align: center;\r\n}\r\n\r\n._progressbar li:before {\r\n\tcontent: counter(step);\r\n\tcounter-increment: step;\r\n\twidth: 30px;\r\n\theight: 30px;\r\n\tline-height: 30px;\r\n\tborder-radius: 100%;\r\n\tdisplay: block;\r\n\ttext-align: center;\r\n\tmargin: 0 auto 10px auto;\r\n\tbackground-color: rgb(229, 229, 229);\r\n}\r\n\r\n._progressbar li:after {\r\n\tcontent: \"\";\r\n\tposition: absolute;\r\n\twidth: 100%;\r\n\theight: 5px;\r\n\tbackground-color: rgb(229, 229, 229);\r\n\ttop: 15px;\r\n\tleft: -50%;\r\n\ttop: 13px;\r\n\tz-index: -1;\r\n}\r\n\r\n._progressbar li:first-child:after {\r\n\tcontent: none;\r\n}\r\n\r\n._progressbar li.active {\r\n\tcolor: white;\r\n}\r\n\r\n._progressbar li.active:before {\r\n\tbackground-color: rgb(231, 87, 53);\r\n}\r\n\r\n._progressbar li.active:after {\r\n\tbackground-color: rgb(231, 87, 53);\r\n}\r\n", ""]);
-
-// exports
-
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 36 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(37);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_text.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_text.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 37 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "input[type=\"text\"] {\r\n\tbackground-color: rgb(229, 229, 229);\r\n\tborder: none;\r\n\tborder-radius: 3px;\r\n\theight: 28px;\r\n\twidth: 210px;\r\n\tcolor: rgb(136, 136, 136);\r\n\tfont-family: 'Myriad Pro', Regular;\r\n\tpadding-left: 13px;\r\n\tbox-sizing: border-box;\r\n\tmargin-bottom: 12px;\r\n}\r\n\r\ninput[type=\"text\"]::-webkit-input-placeholder {\r\n\tcolor: rgb(136, 136, 136);\r\n\tfont-family: 'Myriad Pro', Regular;\r\n\t\r\n\r\n}\r\n\r\ninput[type=\"text\"]:-moz-placeholder {\r\n\tcolor: rgb(136, 136, 136);\r\n\tfont-family: 'Myriad Pro', Regular;\r\n\t\r\n}\r\n\r\ninput[type=\"text\"]:-ms-input-placeholder {\r\n\tcolor: rgb(136, 136, 136);\r\n\tfont-family: 'Myriad Pro', Regular;\r\n\t\r\n}\r\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 38 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11719,100 +10672,22 @@ $('document').ready(function () {
     });
   });
 });
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 39 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 22 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(40);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_validation-cloud.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_validation-cloud.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 40 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 23 */
+/***/ (function(module, exports) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, ".form_error{\r\n\tdisplay: inline-block;\r\n\tmargin: 0;\r\n\tbackground-color: rgb(231,87,53);\r\n\twidth: 72px;\r\n\theight: 30px;\r\n\tmargin-left: 7px;\r\n\tborder-radius: 3px;\r\n\ttext-align: center;\r\n\tvertical-align: top;\r\n\tfont-family: 'Lato', sans-serif;\r\n\tfont-size: 10px;\r\n\tcolor: white;\r\n\tline-height: 12px;\r\n}\r\n.form_error::before{\r\n\tcontent: '';\r\n\tdisplay: block;\r\n\tposition: relative;\r\n\twidth: 8px;\r\n\tleft: -16px;\r\n\ttop:10px;\r\n\tborder:4px solid transparent;\r\n\tborder-right: 4px solid rgb(231,87,53);\r\n\t\r\n}\r\n.form_valid{\r\n\tdisplay: inline-block;\r\n\tmargin: 0;\r\n\tbackground-color: rgb(78,183,168);\r\n\twidth: 72px;\r\n\theight: 30px;\r\n\tmargin-left: 7px;\r\n\tborder-radius: 3px;\r\n\ttext-align: center;\r\n\tvertical-align: top;\r\n\tfont-family: 'Lato', sans-serif;\r\n\tfont-size: 10px;\r\n\tcolor: white;\r\n\tline-height: 12px;\r\n}\r\n.form_valid::before{\r\n\tcontent: '';\r\n\tdisplay: block;\r\n\tposition: relative;\r\n\twidth: 8px;\r\n\tleft: -16px;\r\n\ttop:10px;\r\n\tborder:4px solid transparent;\r\n\tborder-right: 4px solid rgb(78,183,168);\r\n\t\r\n}", ""]);
-
-// exports
-
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 41 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(42);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_email.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_email.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 42 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "input[type=\"email\"] {\r\n\tbackground-color: rgb(229, 229, 229);\r\n\tborder: none;\r\n\tborder-radius: 3px;\r\n\theight: 28px;\r\n\twidth: 210px;\r\n\tcolor: rgb(136, 136, 136);\r\n\tfont-family: 'Myriad Pro', Regular;\r\n\tpadding-left: 13px;\r\n\tbox-sizing: border-box;\r\n\tmargin-bottom: 12px;\r\n}\r\n\r\ninput[type=\"email\"]::-webkit-input-placeholder {\r\n\tcolor: rgb(136, 136, 136);\r\n\tfont-family: 'Myriad Pro', Regular;\r\n}\r\n\r\ninput[type=\"email\"]:-moz-placeholder {\r\n\tcolor: rgb(136, 136, 136);\r\n\tfont-family: 'Myriad Pro', Regular;\r\n}\r\n\r\ninput[type=\"email\"]:-ms-input-placeholder {\r\n\tcolor: rgb(136, 136, 136);\r\n\tfont-family: 'Myriad Pro', Regular;\r\n}\r\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 43 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -11832,280 +10707,46 @@ $(document).ready(function () {
 		}
 	});
 });
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 44 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 25 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(45);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_form-elements.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_form-elements.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 45 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 26 */
+/***/ (function(module, exports) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "#form{\r\n\twidth: 289px;\r\n}", ""]);
-
-// exports
-
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 46 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 27 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(47);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_submit-button.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_submit-button.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 47 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 28 */
+/***/ (function(module, exports) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "input[type=\"submit\"]{\r\n\tmargin-left: 171px;\r\n\tmargin-bottom: 12px;\r\n\tmargin-top: -4px;\r\n\tbox-sizing: border-box;\r\n}", ""]);
-
-// exports
-
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 48 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 29 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(49);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_textarea.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_textarea.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 49 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 30 */
+/***/ (function(module, exports) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "textarea{\r\n\twidth: 289px;\r\n\theight: 89px;\r\n\tborder: none;\r\n\tbackground-color: rgb(229,229,229);\r\n\tborder-radius: 3px;\r\n\tresize: none;\r\n\tcolor: rgb(136, 136, 136);\r\n\tfont-family: 'Myriad Pro', Regular;\r\n\tpadding: 13px;\r\n\tbox-sizing: border-box;\r\n\tmargin-bottom: 12px;\r\n}\r\n\r\n\r\n", ""]);
-
-// exports
-
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 50 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(51);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_toggle.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_toggle.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 51 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, ".b {\r\n\tdisplay: block;\r\n}\r\n\r\n.toggle {\r\n\tposition: relative;\r\n\tleft: 50px;\r\n\twidth: 60px;\r\n\theight: 24px;\r\n\tborder-radius: 100px;\r\n\tbackground-color: #ddd;\r\n\tmargin: -20px -40px;\r\n\toverflow: hidden;\r\n\r\n}\r\n\r\n.check {\r\n\tposition: absolute;\r\n\tdisplay: block;\r\n\tcursor: pointer;\r\n\ttop: 0;\r\n\tleft: 0;\r\n\twidth: 100%;\r\n\theight: 100%;\r\n\topacity: 0;\r\n\tz-index: 6;\r\n}\r\n\r\n.check:checked ~ .track {\r\n\tbackground: rgb(78,183,168);\r\n}\r\n\r\n.check:checked ~ .switch {\r\n\tright: 2px;\r\n\tleft: 38px;\r\n\ttransition: .35s ease;\r\n\ttransition-property: left, right;\r\n}\r\n\r\n.switch {\r\n\tposition: absolute;\r\n\tleft: 2px;\r\n\ttop: 2px;\r\n\tbottom: 2px;\r\n\tright: 38px;\r\n\tbackground-color: #fff;\r\n\tborder-radius: 36px;\r\n\tz-index: 1;\r\n\ttransition: .35s ease;\r\n\ttransition-property: left, right;\r\n}\r\n\r\n.track {\r\n\tposition: absolute;\r\n\tleft: 0;\r\n\ttop: 0;\r\n\tright: 0;\r\n\tbottom: 0;\r\n\ttransition: .35s ease;\r\n\tborder-radius: 40px;\r\n}\r\n.switch::after{\r\n\tcontent: 'OFF';\r\n\tposition: relative;\r\n\tleft: 9px;\r\n\tcolor: white;\r\n\tfont-size: 12px;\r\n\tfont-family: 'Myriad Pro', Regular;\r\n}\r\n.switch::before{\r\n\tcontent: 'ON';\r\n\tposition: relative;\r\n\tleft:-25px;\r\n\tcolor: white;\r\n\tfont-size: 12px;\r\n\tfont-family: 'Myriad Pro', Regular;\r\n}\r\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 52 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(53);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_tick-boxes.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_tick-boxes.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 53 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, ".radiolabel{\r\n\tdisplay: inline-block;\r\n\tbackground-color: rgb(229,229,229);\r\n\twidth: 25px;\r\n\theight:25px;\r\n\tborder-radius: 50%;\r\n\ttransition: background-color .2s ease-in;\r\n}\r\n.radiolabel::after{\r\n\tcontent: '';\r\n\tdisplay: block;\r\n\tposition: relative;\r\n\twidth: 11px;\r\n\theight: 6px;\r\n\tborder-bottom: 2px solid white;\r\n\tborder-left: 2px solid white;\r\n\ttransform: rotate(-45deg);\r\n\tleft: 6px;\r\n\ttop:7px;\r\n\t\r\n}\r\ninput[type=\"radio\"]{\r\n\tdisplay: none;\r\n}\r\n\r\n#radioButton1:checked~#radiolabel1{\r\n\tbackground-color:rgb(40, 162, 144);\r\n\ttransition: all .2s ease-in-out;\r\n}\r\n#radioButton2:checked~#radiolabel2{\r\n\tbackground-color:rgb(40, 162, 144);\r\n\ttransition: all .2s ease-in-out;\r\n}", ""]);
-
-// exports
-
-
-/***/ }),
-/* 54 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(55);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!./_search-box.css", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!./_search-box.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 55 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "#search-box1{\r\n\twidth: 257px;\r\n\toutline: none;\r\n}\r\n.search-box-button{\r\n\tdisplay: inline-block;\r\n\tposition: relative;\r\n\tbackground-color: rgb(231, 87, 53);\r\n\twidth: 33px;\r\n\theight: 28px;\r\n\tborder-top-right-radius: 3px;\r\n\tborder-bottom-right-radius: 3px;\r\n\ttop: -5px;\r\n\tright: 6px;\r\n\tcursor: pointer;\r\n}\r\n.loupe{\r\n\tposition: relative;\r\n\tleft: 9px;\r\n\ttop: 6px;\r\n}", ""]);
-
-// exports
-
-
-/***/ }),
-/* 56 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -12116,235 +10757,40 @@ $('.search-box-button').on('click', function () {
 	$('#search-box1').css('color', 'white');
 	$('#search-box1').val('I’ve not found what I’m looking for...');
 });
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 57 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 32 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(58);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_select.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_select.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 58 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 33 */
+/***/ (function(module, exports) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, ".select{\r\n\t-webkit-appearance:none;\r\n\t-moz-appearance:none;\r\n\tbackground-color: rgb(229, 229, 229);\r\n\tborder: none;\r\n\tborder-radius: 3px;\r\n\theight: 28px;\r\n\twidth: 289px;\r\n\tcolor: rgb(136, 136, 136);\r\n\tfont-family: 'Myriad Pro', Regular;\r\n\tpadding-left: 13px;\r\n\tbox-sizing: border-box;\r\n\tmargin-bottom: 12px;\r\n\toutline: none;\r\n\tcursor: pointer;\r\n}\r\n.select-box::before{\r\n\tcontent: '';\r\n\tposition: absolute;\r\n\tbackground-color: rgb(40, 162, 144);\r\n\twidth: 33px;\r\n\theight: 28px;\r\n\tborder-top-right-radius: 3px;\r\n\tborder-bottom-right-radius: 3px;\r\n\tleft: 263px;\r\n\tcursor: pointer;\r\n\tpointer-events: none;\r\n}\r\n.select-box::after{\r\n\tcontent: '';\r\n\tdisplay: inline-block;\r\n\tposition: relative;\r\n\twidth: 9px;\r\n\theight: 9px;\r\n\tborder-left: 2px solid white;\r\n\tborder-bottom: 2px solid white;\r\n\ttransform: rotate(-45deg);\r\n\tleft: 266px;\r\n\ttop: -37px;\r\n\tcursor: pointer;\r\n\tpointer-events: none;\r\n}", ""]);
-
-// exports
-
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 59 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 34 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(60);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!./_developer-box.css", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!./_developer-box.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 60 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 35 */
+/***/ (function(module, exports) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, ".developer-photo{\r\n\tdisplay: inline-block;\r\n\twidth: 83px;\r\n\theight: 83px;\r\n\tborder: 5px solid rgb(229,229,229);\r\n\tborder-radius: 50%;\r\n\tbackground-image:url('/main/__user-profile/_developer-photo/developer-photo1.png');\r\n\tfloat: left;\r\n}\r\n.developer-cloud{\r\n\twidth: 164px;\r\n\theight: 93px;\r\n\tpadding: 0;\r\n\tbackground-color: rgb(229,229,229);\r\n\tdisplay: inline-block;\r\n\tborder-radius: 10px;\r\n\tmargin-left: 20px;\r\n\tfloat: left;\r\n}\r\n.developer-cloud::before{\r\n\tcontent: '';\r\n\tposition: relative;\r\n\tdisplay: block;\r\n\tborder: 10px solid transparent;\r\n\tborder-right:10px solid rgb(229,229,229);\r\n\tleft: -164px;\r\n\ttop: 35px;\r\n}\r\n\r\n.developer-name{\r\n\tmargin: 0;\r\n\tfont-size: 18px;\r\n\tcolor: rgb(231,87,53);\r\n\tfont-family: 'Myriad Pro', Regular;\r\n\ttext-align: center;\r\n\tposition: relative;\r\n\ttop:-10px;\r\n}\r\n.developer-spec{\r\n\tmargin: 0;\r\n\tfont-size: 11px;\r\n\tcolor: rgb(79,79,79);\r\n\tfont-family: 'Lato', Regular;\r\n\tfont-weight:bolder;\r\n\ttext-align: center;\r\n\tposition: relative;\r\n\ttop:-10px;\r\n}\r\n.fb-button{\r\n\tmargin-left: 37px;\r\n}\r\n.twitter-button{\r\n\tmargin-left: 22px;\r\n}\r\n.dribbble-button{\r\n\tmargin-left: 15px;\r\n}\r\n.developer-cloud:hover{\r\n\tbackground-color: rgb(78,183,168);\r\n}\r\n.developer-cloud:hover::before{\r\n\tborder-right-color: rgb(78,183,168);\r\n}\r\n.developer-cloud:hover > p{\r\n\tcolor: white;\r\n}\r\n.developer-cloud:hover > a > img{\r\n\tcursor: pointer;\r\n\tfilter: brightness(10);\r\n}", ""]);
-
-// exports
-
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 61 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 36 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(62);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_news.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_news.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 62 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, ".news-box{\r\n\theight: 212px;\r\n\twidth: 289px;\r\n\tborder-radius: 3px;\r\n\toverflow: hidden;\r\n\tdisplay: inline-block;\r\n\t\r\n}\r\n.news-content-box{\r\n\tbackground-color: rgb(231,87,53);\r\n\twidth: 194px;\r\n\theight: 212px;\r\n\tposition: relative;\r\n\ttop:-216px;\r\n\tleft: 95px;\r\n\tborder-top-right-radius: 3px;\r\n\tborder-bottom-right-radius: 3px;\r\n\t\r\n}\r\n.news-content-box>p{\r\n\tpadding: 0;\r\n\tmargin: 0;\r\n}\r\n.news-theme{\r\n\tfont-family: 'Lato', sans-serif;\r\n\tfont-size: 28px;\r\n\tcolor: white;\r\n\tposition: relative;\r\n\tleft: 22px;\r\n\tline-height: 26px;\r\n\ttop:22px;\r\n}\r\n.news-date{\r\n\tfont-family: 'Myriad Pro', Regular;\r\n\tfont-size: 11px;\r\n\tcolor: white;\r\n\tposition: relative;\r\n\tleft: 29px;\r\n\ttop: 38px;\r\n}\r\n.news-content{\r\n\tfont-family: 'Myriad Pro', Regular;\r\n\tcolor: white;\r\n\tfont-size: 11px;\r\n\tdisplay: inline-block;\r\n\twidth: 140px;\r\n\tposition: relative;\r\n\tleft: 22px;\r\n\ttop:50px;\r\n}", ""]);
-
-// exports
-
-
-/***/ }),
-/* 63 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(64);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_events.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_events.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 64 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, ".event-box{\r\n\theight: 212px;\r\n\twidth: 289px;\r\n\tborder-radius: 3px;\r\n\tdisplay: inline-block;\r\n\toverflow: hidden;\r\n}\r\n.event-content-box{\r\n\tbackground-color: rgb(78,183,168);\r\n\twidth: 194px;\r\n\theight: 212px;\r\n\tposition: relative;\r\n\ttop:-216px;\r\n\tleft: 95px;\r\n\tborder-top-right-radius: 3px;\r\n\tborder-bottom-right-radius: 3px;\r\n}\r\n.event-content-box>p , .event-content-box>p>span{\r\n\tpadding: 0;\r\n\tmargin: 0;\r\n}\r\n.event-date{\r\n\tfont-family: 'Lato', sans-serif;\r\n\tfont-size: 30px;\r\n\tcolor: white;\r\n\tposition: relative;\r\n\tleft: 22px;\r\n}\r\n.event-date-day{\r\n\tfont-family: 'Lato', sans-serif;\r\n\tfont-size: 72px;\r\n}\r\n.event-title{\r\n\tfont-family: 'Myriad Pro',serif;\r\n\tfont-size: 12px;\r\n\tcolor: white;\r\n\tposition: relative;\r\n\tleft: 22px;\r\n\ttop:10px;\r\n}\r\n.event-content{\r\n\tfont-family: 'Myriad Pro',serif;\r\n\tfont-size: 11px;\r\n\tcolor: white;\r\n\tdisplay: inline-block;\r\n\twidth: 150px;\r\n\tposition: relative;\r\n\tleft: 22px;\r\n\ttop:20px\r\n}\r\n.button-event{\r\n\twidth: 129px !important;\r\n\theight: 23px !important;\r\n\tfont-size: 10px !important;\r\n\tposition: relative;\r\n\tleft: 32px;\r\n\ttop:37px;\r\n}\r\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 65 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(66);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_map.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_map.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 66 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, ".map-box{\r\n\toverflow: hidden;\r\n\twidth:594px; \r\n\theight:274px;\r\n\tborder-top-left-radius: 5px;\r\n\tborder-top-right-radius: 5px;\r\n}\r\n.map-info-box{\r\n\theight: 70px;\r\n\twidth: 100%;\r\n\tbackground-color: rgb(231,87,53);\r\n\tborder-bottom-left-radius: 5px;\r\n\tborder-bottom-right-radius: 5px;\r\n}\r\n.map-call-words{\r\n\tfont-family: 'Lato';\r\n\tfont-size: 30px;\r\n\tcolor: white;\r\n\tposition: relative;\r\n\ttop:14px;\r\n\tleft: 29px;\r\n\t\r\n}\r\n.map-addres{\r\n\tfont-family: 'Lato';\r\n\tfont-size: 12,5px;\r\n\tcolor: white;\r\n\tposition: relative;\r\n\tleft: 166px;\r\n\ttop: -35px;\r\n}\r\n.map-myLocation{\r\n\tposition: relative;\r\n\ttop: -85px;\r\n\tleft: 500px;\r\n\tcursor: pointer;\r\n}\r\n.map-pin{\r\n\tposition: relative;\r\n\ttop: -85px;\r\n\tleft: 524px;\r\n\tcursor: pointer;\r\n}", ""]);
-
-// exports
-
-
-/***/ }),
-/* 67 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -12382,52 +10828,13 @@ ymaps.ready(function () {
 });
 
 /***/ }),
-/* 68 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 38 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(69);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_calendar.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_calendar.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 69 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, "#calendar table tr th{\r\n\tbackground-color: rgb(231,87,53);\r\n\tborder-collapse: collapse;\r\n\tfont-family: lato;\r\n\tfont-size: 9px;\r\n\tcolor: white;\r\n\theight: 27px;\r\n}\r\n\r\n#calendar table{\r\n\tborder-collapse: collapse;\r\n\ttext-align: center;\r\n}\r\n#calendar table tr td{\r\n\tbackground-color: rgb(242,242,242);\r\n\tborder: 1px solid white;\r\n\twidth: 39px;\r\n\theight: 39px;\r\n\tfont-family: myriad pro;\r\n\tcolor: rgb(134,134,134);\r\n\tfont-size: 20px;\r\n}\r\n.today{\r\n\tbackground-color: rgb(231,87,53) !important;\r\n\tcolor: white !important;\r\n\t\r\n}\r\n\r\n.calendar-box{\r\n\twidth: 279px;\r\n\theight: 392px;\r\n\toverflow: hidden;\r\n\tborder-radius: 4px;\r\n}\r\n#month{\r\n\twidth: 100%;\r\n\theight: 43px;\r\n\tbackground-color: rgb(213,76,44);\r\n}\r\n#day{\r\n\twidth: 100%;\r\n\theight: 109px;\r\n\tbackground-color: rgb(231,87,53);\r\n\t\r\n\t\r\n}\r\n#today{\r\n\twidth: 279px;\r\n\theight: 49px;\r\n\tbackground-color: rgb(229,229,229);\r\n\tborder-bottom-left-radius: 4px;\r\n\tborder-bottom-right-radius: 4px;\r\n}\r\n#today p{\r\n\tmargin: 0;\r\n\tfont-family: lato;\r\n\tcolor: rgb(134,134,134);\r\n\tfont-size: 13px;\r\n\tpadding-left: 20px;\r\n\tpadding-top: 15px;\r\n}\r\n\r\n.today-top{\r\n\tmargin: 0;\r\n\tcolor: white;\r\n\tfont-family: lato;\r\n\tfont-size: 80px;\r\n\ttext-align: center;\r\n\tpadding-top: 13px;\r\n}\r\n.month-top{\r\n\tmargin: 0;\r\n\tfont-family: lato;\r\n\tfont-size: 24px;\r\n\tcolor: white;\r\n\ttext-align: center;\r\n\tpadding-top: 6px;\r\n}\r\n.month-left-button{\r\n\twidth: 10px;\r\n\theight: 10px;\r\n\tborder-top:  2px solid white;\r\n\tborder-left: 2px solid white;\r\n\tposition: relative;\r\n\ttop: -20px;\r\n\tleft: 20px;\r\n\ttransform: rotate(-45deg);\r\n\tcursor: pointer;\r\n}\r\n.month-right-button{\r\n\twidth: 10px;\r\n\theight: 10px;\r\n\tborder-top:  2px solid white;\r\n\tborder-left: 2px solid white;\r\n\tposition: relative;\r\n\ttop: -32px;\r\n\tleft: 250px;\r\n\ttransform: rotate(135deg);\r\n\tcursor: pointer;\r\n}\r\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 70 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -12524,142 +10931,105 @@ var month_right_change = function month_right_change() {
 		createCalendar("calendar", 2017, changed_month + 1);
 	}
 };
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 71 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 40 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(72);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./_message-window.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./_message-window.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 72 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 41 */
+/***/ (function(module, exports) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, ".message-window-box{\r\n\twidth: 279px;\r\n\theight: 428px;\r\n\toverflow: hidden;\r\n\tborder-radius: 4px;\r\n\r\n}\r\n.message-window-name {\r\n\theight: 82px;\r\n\tbackground-color: rgb(78,183,168);\r\n}\r\n.message-window-name p{\r\n\tmargin: 0;\r\n\tfont-family: myriad pro;\r\n\tfont-size: 34px;\r\n\ttext-align: center;\r\n\tpadding-top: 20px;\r\n\tcolor: white\r\n}\r\n.message-window-darkline {\r\n\theight: 34px;\r\n\tbackground-color: rgb(70,171,157);\r\n\t\r\n}\r\n\r\n.message-window-messageSpace {\r\n\theight: 312px;\r\n\tbackground-color: rgb(242,242,242);\r\n}\r\n.message-window-photo{\r\n\tdisplay: block;\r\n\twidth: 83px;\r\n\theight: 83px;\r\n\tborder: 5px solid rgb(229,229,229);\r\n\tborder-radius: 50%;\r\n\tbackground-image: url(/main/__message-window/_message-window-photo/developer-photo2.png);\r\n\tposition: relative;\r\n\ttop: -15px;\r\n\tleft: 90px;\r\n}\r\n.incoming-message {\r\n\tbackground-color: white;\r\n\theight: 69px;\r\n\twidth: 243px;\r\n\tposition: relative;\r\n\tleft: 18px;\r\n\ttop: 62px;\r\n\tborder-radius: 5px;\r\n}\r\n\r\n\r\n.incoming-message p{\r\n\tmargin: 0;\r\n\tfont-family: lato;\r\n\tfont-size: 12,5px;\r\n\tcolor: rgb(134,134,134);\r\n\tpadding-top: 15px;\r\n\tpadding-left: 20px;\r\n\tposition: relative;\r\n\ttop: -24px;\r\n}\r\n.incoming-message::before{\r\n\tcontent: '';\r\n\tposition: relative;\r\n\tdisplay: inline-block;\r\n\tborder: 10px solid transparent;\r\n\tborder-bottom:10px solid white;\r\n\ttop: -20px;\r\n\tleft: 107px;\r\n}\r\n#message-text{\r\n\twidth: 237px;\r\n\theight: 82px;\r\n\tborder: 3px solid white;\r\n\tbackground-color: rgb(229,229,229);\r\n\tborder-radius: 3px;\r\n\tresize: none;\r\n\tcolor: rgb(136, 136, 136);\r\n\tfont-family: 'Myriad Pro', Regular;\r\n\tpadding: 13px;\r\n\tbox-sizing: border-box;\r\n\tposition: relative;\r\n\ttop: 80px;\r\n\tleft: 22px;\r\n\toutline: none;\r\n}\r\n.message-reply-button{\r\n\twidth: 243px !important;\r\n\theight: 32px !important;\r\n\tfont-size: 10px !important;\r\n\tposition: relative;\r\n\tleft: -153px;\r\n\ttop: 84px\r\n\r\n}\r\n\r\n\r\n.chat-icon {\r\n\tposition: relative;\r\n\tleft: 27px;\r\n\ttop: 23px;\r\n\tcursor: pointer;\r\n}\r\n\r\n.camera-icon {\r\n\tposition: relative;\r\n\tleft: 212px;\r\n\ttop: 22px;\r\n\tcursor: pointer;\r\n}\r\n", ""]);
-
-// exports
-
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 73 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 42 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(74);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!./Lato-Black.css", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!./Lato-Black.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 74 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 43 */
+/***/ (function(module, exports) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
-
-
-// module
-exports.push([module.i, " @font-face {font-family:\"Lato Black\";src:url(\"/main/__fonts/Lato Black/Lato-Black.eot?\") format(\"eot\"),url(\"/main/__fonts/Lato Black/Lato-Black.woff\") format(\"woff\"),url(\"/main/__fonts/Lato Black/Lato-Black.ttf\") format(\"truetype\"),url(\"/main/__fonts/Lato Black/Lato-Black.svg#Lato-Black\") format(\"svg\");font-weight:normal;font-style:normal;}\n", ""]);
-
-// exports
-
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 75 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 44 */
+/***/ (function(module, exports) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(76);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// Prepare cssTransformation
-var transform;
-
-var options = {"hmr":true}
-options.transform = transform
-// add the styles to the DOM
-var update = __webpack_require__(1)(content, options);
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!./button-position.css", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!./button-position.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+// removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 76 */
+/* 45 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 46 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(0)(undefined);
-// imports
+"use strict";
+/* WEBPACK VAR INJECTION */(function($) {
 
+$('.message-window-photo').css('background-image', 'url(./main/__message-window/_message-window-photo/developer-photo2.png)');
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
-// module
-exports.push([module.i, ".button-margin{\r\n\tfloat: left;\r\n\tmargin-right: 24px !important;\r\n}\r\n#buttons{\r\n\tpadding-top: 163px;\r\n\tpadding-left: 110px;\r\n}\r\n.small-button-margin{\r\n\tmargin-top: 10px !important;\r\n}\r\n", ""]);
+/***/ }),
+/* 48 */
+/***/ (function(module, exports, __webpack_require__) {
 
-// exports
+"use strict";
+/* WEBPACK VAR INJECTION */(function($) {
 
+$('.developer-photo').css('background-image', 'url(./main/__message-window/_message-window-photo/developer-photo1.png)');
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
+
+/***/ }),
+/* 49 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 50 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 51 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 52 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 53 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 54 */
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
 
 /***/ })
 /******/ ]);

@@ -18,4 +18,13 @@
 	position: relative;
 	left: 9px;
 	top: 6px;
+} 
+
+/*position*/
+#search-container{
+	margin-left: 45px;
+	margin-top: 19px;
+}
+.select-box{
+	margin-top: 51px;
 }

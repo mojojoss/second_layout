@@ -75,3 +75,14 @@
 	font-size: 12px;
 	font-family: 'Myriad Pro', Regular;
 }
+
+
+/*position*/
+.toggle-box{
+	width: 300px;
+	float: left;
+}
+.toggle-position{
+	margin-left: 46px !important;
+	margin-top: 30px !important;
+}

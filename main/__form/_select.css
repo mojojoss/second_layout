@@ -14,15 +14,16 @@
 	outline: none;
 	cursor: pointer;
 }
-.select-box::before{
+.select-box-button{
 	content: '';
-	position: absolute;
+	position: relative;
 	background-color: rgb(40, 162, 144);
 	width: 33px;
 	height: 28px;
 	border-top-right-radius: 3px;
 	border-bottom-right-radius: 3px;
-	left: 263px;
+	left: 255px;
+	top: -40px;
 	cursor: pointer;
 	pointer-events: none;
 }
@@ -36,7 +37,7 @@
 	border-bottom: 2px solid white;
 	transform: rotate(-45deg);
 	left: 266px;
-	top: -37px;
+	top: -65px;
 	cursor: pointer;
 	pointer-events: none;
 }

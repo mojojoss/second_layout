@@ -6,7 +6,7 @@ input[type="text"] {
 	width: 210px;
 	color: rgb(136, 136, 136);
 	font-family: 'Myriad Pro', Regular;
-	padding-left: 13px;
+	padding-left: 15px;
 	box-sizing: border-box;
 	margin-bottom: 12px;
 }
