@@ -51,3 +51,5 @@ import './__map/map-position.css';
 import './__calendar/calendar-messaging-position.css';
 import './__video/video-position.css';
 import './__body/body.css';
+import './__message-window/_message-window-photo/developer-photo1.png';
+import './__message-window/_message-window-photo/developer-photo2.png';
