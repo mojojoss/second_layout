@@ -9,8 +9,9 @@ module.exports = {
 	},
 	output: {
 		path: path.resolve(__dirname, './build'),
-		filename: '[name].bundle.js',
-		publicPath: '/public'
+		filename: '[name].bundle.js'
+//		,
+//		publicPath: ''
 	},
 	devServer: {
 		contentBase: path.resolve(__dirname, './main')
