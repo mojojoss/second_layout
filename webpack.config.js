@@ -9,8 +9,7 @@ module.exports = {
 	},
 	output: {
 		path: path.resolve(__dirname, './build'),
-		filename: '[name].bundle.js'
-		,
+		filename: '[name].bundle.js',
 		publicPath: 'https://mojojoss.github.io/second_layout/'
 	},
 	devServer: {
@@ -50,10 +49,23 @@ module.exports = {
 						loader: 'file-loader',
 						options: {
 							name: '[path][name].[ext]'
-								}
-					}		
-        			]
+						}
+					}
+        			]},
+				{
+					test: /\.(png|jpg|gif)$/,
+					use: [
+						{
+							loader: 'url-loader',
+							options: {
+								limit: 8192
+							}
+          }
+        ]
+				
 				},
+
+
 
 
 			]
