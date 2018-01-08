@@ -10,7 +10,7 @@ module.exports = {
 	output: {
 		path: path.resolve(__dirname, './build'),
 		filename: '[name].bundle.js',
-		publicPath: 'https://mojojoss.github.io/second_layout/'
+		publicPath: '/second_layout/'
 	},
 	devServer: {
 		contentBase: path.resolve(__dirname, './main')
