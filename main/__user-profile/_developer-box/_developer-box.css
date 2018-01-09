@@ -4,7 +4,7 @@
 	height: 83px;
 	border: 5px solid rgb(229,229,229);
 	border-radius: 50%;
-/*	background-image:url('../main/__user-profile/_developer-photo/developer-photo1.png');*/
+	background-image:url('/main/__user-profile/_developer-photo/developer-photo1.png');
 	float: left;
 }
 .developer-cloud{

@@ -76,7 +76,7 @@ function createCalendar(id, year, month) {
 
 
 
-	createCalendar("calendar", 2017, changed_month + 1);
+	createCalendar("calendar", 2018, changed_month + 1);
 
 	$('#day').html('<p class="today-top">' + today.getDate() + '</p>');
 
@@ -93,11 +93,11 @@ function createCalendar(id, year, month) {
 			changed_month = 11;
 			console.log(changed_month);
 			putMonth(changed_month);
-			createCalendar("calendar", 2017, changed_month + 1);
+			createCalendar("calendar", 2018, changed_month + 1);
 		} else {
 			console.log(changed_month);
 			putMonth(changed_month);
-			createCalendar("calendar", 2017, changed_month + 1);
+			createCalendar("calendar", 2018, changed_month + 1);
 		}
 	}
 	var month_right_change = function () {
@@ -106,10 +106,10 @@ function createCalendar(id, year, month) {
 			changed_month = 0;
 			console.log(changed_month);
 			putMonth(changed_month);
-			createCalendar("calendar", 2017, changed_month + 1);
+			createCalendar("calendar", 2018, changed_month + 1);
 		} else {
 			console.log(changed_month);
 			putMonth(changed_month);
-			createCalendar("calendar", 2017, changed_month + 1);
+			createCalendar("calendar", 2018, changed_month + 1);
 		}
 	}

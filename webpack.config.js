@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
 	context: path.resolve(__dirname, './main'),
@@ -10,14 +11,23 @@ module.exports = {
 	output: {
 		path: path.resolve(__dirname, './build'),
 		filename: '[name].bundle.js',
-		publicPath: '/second_layout/'
+		publicPath: 'localhost:8080/'
 	},
 	devServer: {
-		contentBase: path.resolve(__dirname, './main')
+		contentBase: path.resolve(__dirname, './')
 	},
 
 	module: {
 		rules: [
+			{
+				test: /\.html$/,
+				use: [
+					{
+						loader:'html-loader'
+					}
+				]
+			},
+			
 			{
 				test: /\.js$/,
 				exclude: [/node_modules/],
@@ -44,7 +54,7 @@ module.exports = {
 
 			{
 				test: /\.(png|jpg|gif|svg|eot|ttf|woff|woff2)$/,
-				use: 'file-loader?name=[name][ext]&outputPath=images/'
+				use: 'file-loader?name=[name].[ext]&outputPath=images/'
 						}
 					
         			,
@@ -73,5 +83,10 @@ module.exports = {
 			jquery: 'jquery'
 		}),
 		new ExtractTextPlugin('styles.css')
+//		,
+//		new HtmlWebpackPlugin({
+//            template: '../index.html',
+//			filename: 'index.html'
+//        })
 	]
 };
