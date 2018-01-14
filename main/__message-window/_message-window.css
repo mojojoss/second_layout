@@ -100,6 +100,7 @@
 	left: 27px;
 	top: 23px;
 	cursor: pointer;
+	background-image: url(_message-window-icon/ChatIcon.png);
 }
 
 .camera-icon {
