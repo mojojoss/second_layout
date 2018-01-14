@@ -7,6 +7,7 @@
 	
 }
 .news-content-box{
+	display: inline-block;
 	background-color: rgb(231,87,53);
 	width: 194px;
 	height: 212px;
@@ -16,6 +17,12 @@
 	border-top-right-radius: 3px;
 	border-bottom-right-radius: 3px;
 	
+}
+#news-photo1{
+	display: inline-block;
+	background-image: url(../../main/__news/_news-images/news-photo1.png);
+	width: 95px;
+	height: 212px;
 }
 .news-content-box>p{
 	padding: 0;

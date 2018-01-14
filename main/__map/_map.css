@@ -30,12 +30,20 @@
 	top: -35px;
 }
 .map-myLocation{
+	display: inline-block;
+	background-image: url(../../main/__map/_map_images/MyLocation.png);
+	width: 26px;
+	height: 26px;
 	position: relative;
 	top: -85px;
 	left: 500px;
 	cursor: pointer;
 }
 .map-pin{
+	display: inline-block;
+	background-image: url(../../main/__map/_map_images/Pin.png);
+	width: 19px;
+	height: 25px;
 	position: relative;
 	top: -85px;
 	left: 524px;

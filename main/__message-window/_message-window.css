@@ -44,7 +44,7 @@
 	width: 243px;
 	position: relative;
 	left: 18px;
-	top: 62px;
+	top: 35px;
 	border-radius: 5px;
 }
 
@@ -80,7 +80,7 @@
 	padding: 13px;
 	box-sizing: border-box;
 	position: relative;
-	top: 80px;
+	top: 50px;
 	left: 22px;
 	outline: none;
 }
@@ -90,7 +90,7 @@
 	font-size: 10px !important;
 	position: relative;
 	left: -153px;
-	top: 84px
+	top: 54px
 
 }
 
@@ -100,12 +100,19 @@
 	left: 27px;
 	top: 23px;
 	cursor: pointer;
-	background-image: url(_message-window-icon/ChatIcon.png);
+	
+	width: 20px;
+	height: 22px;
+
+	background-image: url(../../main/__message-window/_message-window-icon/ChatIcon.png);
 }
 
 .camera-icon {
+	background-image: url(../../main/__message-window/_message-window-icon/CameraIcon.png);
+	width: 25px;
+	height: 20px;
 	position: relative;
 	left: 212px;
-	top: 22px;
+	
 	cursor: pointer;
 }

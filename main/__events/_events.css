@@ -6,6 +6,7 @@
 	overflow: hidden;
 }
 .event-content-box{
+	display: inline-block;
 	background-color: rgb(78,183,168);
 	width: 194px;
 	height: 212px;
@@ -14,6 +15,12 @@
 	left: 95px;
 	border-top-right-radius: 3px;
 	border-bottom-right-radius: 3px;
+}
+#event-image1{
+	display: inline-block;
+	background-image: url(../../main/__events/_news-images/event-image1.png);
+	width: 95px;
+	height: 212px;
 }
 .event-content-box>p , .event-content-box>p>span{
 	padding: 0;

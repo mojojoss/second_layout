@@ -46,15 +46,7 @@
 	position: relative;
 	top:-10px;
 }
-.fb-button{
-	margin-left: 37px;
-}
-.twitter-button{
-	margin-left: 22px;
-}
-.dribbble-button{
-	margin-left: 15px;
-}
+
 .developer-cloud:hover{
 	background-color: rgb(78,183,168);
 }
@@ -64,7 +56,28 @@
 .developer-cloud:hover > p{
 	color: white;
 }
-.developer-cloud:hover > a > img{
+.fb-button{
+	display: inline-block;
+	margin-left: 37px;
+	background-image: url(../../../main/__social-buttons/FB.png);
+	width: 10px;
+	height: 21px;
+}
+.twitter-button{
+	display: inline-block;
+	margin-left: 22px;
+	background-image: url(../../../main/__social-buttons/Twitter.png);
+	width: 25px;
+	height: 20px;
+}
+.dribbble-button{
+	display: inline-block;
+	margin-left: 15px;
+	background-image: url(../../../main/__social-buttons/Dribbble.png);
+	width: 21px;
+	height: 21px;
+}
+.developer-cloud:hover > a > div{
 	cursor: pointer;
 	filter: brightness(10);
 }
