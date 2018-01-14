@@ -42,10 +42,6 @@ module.exports = {
             },
 			{
 				test: /\.css$/,
-				//					use: [
-				//                    'style-loader',
-				//                    'css-loader'
-				//                ]
 				use: ExtractTextPlugin.extract({
 					fallback: 'style-loader',
 					use: 'css-loader'
@@ -54,22 +50,22 @@ module.exports = {
 
 			{
 				test: /\.(png|jpg|gif|svg|eot|ttf|woff|woff2)$/,
-				use: 'file-loader?name=[name].[ext]&outputPath=images/'
+				use: 'file-loader'
 						}
 					
         			,
-				{
-					test: /\.(png|jpg|gif)$/,
-					use: [
-						{
-							loader: 'url-loader',
-							options: {
-								limit: 8192
-							}
-          }
-        ]
-				
-				},
+//				{
+//					test: /\.(png|jpg|gif)$/,
+//					use: [
+//						{
+//							loader: 'url-loader',
+//							options: {
+//								limit: 8192
+//							}
+//          }
+//        ]
+//				
+//				},
 
 
 
