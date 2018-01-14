@@ -66,3 +66,4 @@ require('./__message-window/_message-window-photo/developer-photo2.png');
 require('./__news/_news-images/news-photo1.png');
 require('./__user-profile/_developer-photo/developer-photo1.png');
 require('./__user-profile/_developer-photo/developer-photo2.png');
+require('../index.html');
