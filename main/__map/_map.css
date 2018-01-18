@@ -6,6 +6,7 @@
 	border-top-right-radius: 5px;
 }
 .map-info-box{
+	position: relative;
 	height: 70px;
 	width: 100%;
 	background-color: rgb(231,87,53);

@@ -23,11 +23,11 @@ module.exports = {
 				test: /\.html$/,
 				use: [
 					{
-						loader:'html-loader'
+						loader: 'html-loader'
 					}
 				]
 			},
-			
+
 			{
 				test: /\.js$/,
 				exclude: [/node_modules/],
@@ -51,21 +51,11 @@ module.exports = {
 			{
 				test: /\.(png|jpg|gif|svg|eot|ttf|woff|woff2)$/,
 				use: 'file-loader'
-						}
-					
-        			,
-//				{
-//					test: /\.(png|jpg|gif)$/,
-//					use: [
-//						{
-//							loader: 'url-loader',
-//							options: {
-//								limit: 8192
-//							}
-//          }
-//        ]
-//				
-//				},
+			},
+			{
+				test: /\.pug$/,
+				use: ['raw-loader', 'pug-html-loader']
+			},
 
 
 
@@ -78,11 +68,9 @@ module.exports = {
 			$: 'jquery',
 			jquery: 'jquery'
 		}),
+		new HtmlWebpackPlugin({
+			template:'../index.pug'
+		}),
 		new ExtractTextPlugin('styles.css')
-//		,
-//		new HtmlWebpackPlugin({
-//            template: '../index.html',
-//			filename: 'index.html'
-//        })
 	]
 };

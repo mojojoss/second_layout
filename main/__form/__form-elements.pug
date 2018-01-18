@@ -1,0 +1,25 @@
+h2(style='margin-left: 261px; margin-top: 53px; letter-spacing: 0.8px;') FORM   ELEMENTS
+#form-elements
+  form#form
+    label
+      input#input-text(type='text', required='', placeholder='Your Name', name='input-text')
+      span#text-valid-cloud.form_error ERROR
+    label(for='input-email')
+      br
+      input#input-email.input-email(type='email', required='', name='input-email', placeholder='Your Email')
+      span#email-valid-cloud.form_error ERROR
+    br
+    textarea#textarea(name='textarea', form='form', placeholder='Your Message')
+    input.__button._button_color-aqua._button_size-big.ripp(type='submit', value='SUBMIT')
+  .toggle-box
+    h2(style='margin-top: -4px; margin-left: 125px;') TOGGLES
+    .toggle.toggle-position
+      input.check(type='checkbox')
+      .b.switch
+      .b.track
+    h2(style='margin-left: 106px; margin-top: 56px;') TICK   BOXES
+    form#tick-box
+      input#radioButton1(type='radio', name='radio')
+      label#radiolabel1.radiolabel(for='radioButton1')
+      input#radioButton2(type='radio', name='radio')
+      label#radiolabel2.radiolabel(for='radioButton2')

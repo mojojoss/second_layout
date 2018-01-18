@@ -1,0 +1,48 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    title Layout
+    script(src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js')
+    link(href='style.css', rel='stylesheet')
+    link(href='./build/styles.css', rel='stylesheet')
+    link(href='http://fonts.googleapis.com/css?family=Lato:400,700', rel='stylesheet', type='text/css')
+    script(src='https://api-maps.yandex.ru/2.1/?lang=ru_RU', type='text/javascript')
+    style(type='text/css').
+      @font-face {
+      font-family: "Lato Black";
+      src: url("./main/__fonts/Lato-Black/Lato-Black.eot?") format("eot"), url("./main/__fonts/Lato-Black/Lato-Black.woff") format("woff"), url("./main/__fonts/Lato-Black/Lato-Black.ttf") format("truetype"), url("./main/__fonts/Lato-Black/Lato-Black.svg#Lato-Black") format("svg");
+      font-weight: normal;
+      font-style: normal;
+      }
+  body
+    include main/__button/__standard-buttons
+    include main/__arrow-button/__arrow-button.pug
+    include main/__percentage/__percentage_and_pie-chart.pug
+    include main/__slider-aqua/__sliders.pug
+    include main/__progressbar/__progressbar.pug
+    include main/__form/__form-elements.pug
+    div
+      include main/__form/_search-box/__search-dropdown.pug
+      include main/__user-profile/__user-profile.pug
+    h2(style='position: relative; left: -6px; top: 88px;') NEWS   &   EVENTS
+    br
+    br
+    br
+    br
+    br
+    include main/__news/__news-box.pug
+    include main/__events/__events.pug
+    include main/__map/__map.pug
+    div
+      h2(style='float: left; margin-left: 130px; margin-top: 50px;') CALENDAR
+      h2(style='float: left; margin-left: 200px; margin-top: 50px;') MESSAGING
+      include main/__calendar/__calendar.pug
+      include main/__message-window/__message-window.pug
+    br
+    br
+    br
+    br
+    include main/__video/__video.pug
+    script(src='js.js')
+    script(src='./build/app.bundle.js')
